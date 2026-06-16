@@ -27,6 +27,7 @@ professional offering, and lays out (and enacts) the work to make it
 
 | Path | What |
 |---|---|
+| [`SCORECARD.md`](SCORECARD.md) | **The grade.** Living, weighted scorecard of clawd's 8004 presence — current **C+**, target **A**, with the checklist to get there. Re-scored on every change. |
 | [`docs/AUDIT.md`](docs/AUDIT.md) | **Start here.** Verified state of #21548, the drift bugs, the 6-repo family map, brain hygiene. With receipts. |
 | [`docs/SURFACE.md`](docs/SURFACE.md) | The full "you can hire clawd" map: identity → services → governance → tooling, and how they should reference each other. |
 | [`docs/PLAN.md`](docs/PLAN.md) | Prioritized plan to make the profile professional & ready for service. Each step tagged 🟢 SAFE / 🟡 NEEDS-GO / 🔵 DECISION. |
