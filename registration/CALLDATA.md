@@ -7,6 +7,13 @@
 > real gas. **Get an explicit go before broadcasting.** Sign from the token /
 > name owner `0x11ce532845cE0eAcdA41f72FDc1C88c335981442`.
 
+> **Decisions locked 2026-06-16:** **inline** card (ship now, no deploy
+> dependency) · **live prices** are canonical (route agents to the dynamic 402;
+> no hardcoded prices in the card) · interop via **skill** (`skill` +
+> `agent-card` entries added; not MCP). → Use **OPTION A (inline)** below.
+> Easiest path: the ENS-identity dApp — paste [`agent-registration.json`](agent-registration.json)
+> and sign. Raw inline calldata (large) comes from `./gen-calldata.sh`.
+
 ## What gets re-synced & where
 
 | Target | Contract | Function | Why |
