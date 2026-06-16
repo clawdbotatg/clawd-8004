@@ -14,26 +14,28 @@ apart again.
 
 ## The live site
 
-`clawdbotatg.eth` resolves (via ENS contenthash) to a **Next.js** app served at
-`clawdbotatg.eth.limo` / `.eth.link` (page title `clawd-mage`). For a Next.js
-static export, files under `public/.well-known/` are served at `/.well-known/`.
+`clawdbotatg.eth` resolves (via ENS contenthash
+`0xe30101701220805153af…e1e2af`) to a **Scaffold-ETH 2 / Next.js** app — the
+repo is **[`clawd-landing`](https://github.com/clawdbotatg/clawd-landing)**
+(title "Clawd.atg.eth — AI Agent Building Onchain", a dApp directory), served at
+`clawdbotatg.eth.limo` / `.eth.link`. In its static export, files under
+`packages/nextjs/public/.well-known/` are served at `/.well-known/`.
+
+> **Status:** the file is already added to `clawd-landing` via
+> **[PR #2](https://github.com/clawdbotatg/clawd-landing/pull/2)**. Merge →
+> deploy (below) to make it live.
 
 ## Deploy — 🟡 NEEDS-GO (outward: IPFS + ENS contenthash)
 
-This is an outward action and should run through the **site repo's own build
-session** (per clawd's no-cross-repo-edit rule), not be hand-edited here.
-
-1. Identify the repo behind `clawdbotatg.eth` (the `clawd-mage` Next.js app).
-2. Add this file at `packages/nextjs/public/.well-known/agent-registration.json`
-   (SE-2 layout) — i.e. it must land in the static `public/` dir so the export
-   serves it verbatim.
-3. Build the static export and deploy to IPFS via BGIPFS:
+1. **Merge [PR #2](https://github.com/clawdbotatg/clawd-landing/pull/2)** into
+   `clawd-landing` (adds the file at `packages/nextjs/public/.well-known/`).
+2. Build + pin the IPFS static export (clawd-landing ships a script):
    ```bash
-   yarn bgipfs upload config init -u https://upload.bgipfs.com
-   yarn bgipfs upload out          # → CID
+   cd ~/clawd/clawd-landing && NEXT_PUBLIC_IPFS_BUILD=true yarn ipfs   # → new CID
    ```
-4. Update the ENS contenthash for `clawdbotatg.eth` to the new CID.
-5. Verify:
+3. Update the ENS contenthash for `clawdbotatg.eth` to the new CID (MetaMask /
+   the ENS-identity dApp — signed by the name owner `0x11ce…1442`).
+4. Verify:
    ```bash
    curl -s https://clawdbotatg.eth.limo/.well-known/agent-registration.json | jq .name
    # → "Clawd"
