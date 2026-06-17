@@ -53,9 +53,11 @@
       <div id="s3" class="muted">pending</div></div></div>
     <div class="row" style="margin-top:14px">
       <button id="go" disabled>Sign all 3 →</button>
+      <button id="go3" disabled>Just sign step 3 (fix ENS url)</button>
       <button id="preview" class="sec">Preview the new card</button>
       <button id="current" class="sec">Read what's on-chain now</button>
     </div>
+    <p class="muted" style="margin:8px 0 0;font-size:12.5px">Steps 1 &amp; 2 already mined? Use <b>Just sign step 3</b> — it fires the ENS <code>url</code> fix on its own without waiting on the others.</p>
   </div>
 
   <div class="card"><b>Log</b><div id="log" class="muted">—</div></div>
@@ -98,6 +100,7 @@ async function connect(){
   $("owner").textContent = isOwner ? "✓ owner" : "✗ NOT the owner wallet";
   $("owner").className = "pill " + (isOwner?"ok":"bad");
   $("go").disabled = !isOwner;
+  $("go3").disabled = !isOwner;
   log(isOwner ? "Connected as the owner. Ready." : "This wallet does not own #21548 — connect 0x11ce…1442.", isOwner?"ok":"bad");
 }
 
@@ -141,8 +144,18 @@ async function go(){
   log("\n🦞 All set. clawd's 8004 identity is re-synced. Re-run the scorecard.","ok");
 }
 
+async function go3(){
+  $("go3").disabled = true; $("go").disabled = true;
+  const res = new ethers.Contract(RESOLVER, RES_ABI, signer);
+  log("\nSigning step 3 only — approve 1 transaction (ENS url → eth.limo).","warn");
+  if(await sendStep(3, res, "setText", [NODE, "url", LIMO])){
+    log("\n🦞 Step 3 done. If steps 1 & 2 also landed, the identity is fully re-synced — re-run the scorecard.","ok");
+  } else { $("go3").disabled=false; $("go").disabled=false; }
+}
+
 $("connect").onclick = connect;
 $("go").onclick = go;
+$("go3").onclick = go3;
 $("current").onclick = readCurrent;
 $("preview").onclick = () => {
   const json = atob(DATA_URI.split(",")[1]);

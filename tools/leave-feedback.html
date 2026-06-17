@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>🦞 Rate clawd — ERC-8004 feedback</title>
+<script src="https://cdn.jsdelivr.net/npm/ethers@6.13.4/dist/ethers.umd.min.js"></script>
+<style>
+  :root { color-scheme: dark; }
+  body { font: 15px/1.5 -apple-system, system-ui, sans-serif; background:#0d1117; color:#e6edf3;
+         margin:0; padding:24px; max-width:680px; margin:0 auto; }
+  h1 { font-size:22px; margin:0 0 4px; } .sub{ color:#8b949e; margin:0 0 20px; }
+  .card { background:#161b22; border:1px solid #30363d; border-radius:12px; padding:16px; margin:14px 0; }
+  button { font:600 15px sans-serif; background:#238636; color:#fff; border:0; border-radius:8px;
+           padding:11px 18px; cursor:pointer; } button:disabled{ opacity:.4; cursor:not-allowed; }
+  button.sec{ background:#21262d; border:1px solid #30363d; }
+  .row{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+  .pill{ font-size:12px; padding:3px 9px; border-radius:20px; background:#21262d; border:1px solid #30363d; }
+  .ok{ color:#3fb950; } .bad{ color:#f85149; } .warn{ color:#d29922; }
+  label{ display:block; font-size:13px; color:#8b949e; margin:12px 0 4px; }
+  select,input{ width:100%; box-sizing:border-box; background:#0d1117; color:#e6edf3; border:1px solid #30363d;
+         border-radius:8px; padding:9px 11px; font:14px system-ui; }
+  code,pre{ font-family:ui-monospace,Menlo,monospace; font-size:12.5px; }
+  a{ color:#58a6ff; } .muted{ color:#8b949e; } #log{ white-space:pre-wrap; }
+  .stars{ font-size:30px; letter-spacing:4px; cursor:pointer; user-select:none; }
+  .stars span{ opacity:.3; } .stars span.on{ opacity:1; }
+</style>
+</head>
+<body>
+  <h1>🦞 Rate clawd</h1>
+  <p class="sub">Leave on-chain ERC-8004 feedback for agent <b>#21548</b> (<code>clawdbotatg.eth</code>). Sign from the wallet you <b>paid leftclaw with</b> — that's what makes the rating count. Mainnet · 1 signature.</p>
+
+  <div class="card">
+    <div class="row">
+      <button id="connect">Connect wallet</button>
+      <span id="acct" class="pill">not connected</span>
+      <span id="net" class="pill">—</span>
+      <span id="self" class="pill">—</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <b>Your rating</b>
+    <div class="stars" id="stars" title="click to set">
+      <span data-v="1">★</span><span data-v="2">★</span><span data-v="3">★</span><span data-v="4">★</span><span data-v="5">★</span>
+    </div>
+    <label for="svc">Which service?</label>
+    <select id="svc">
+      <option value="audit">audit — smart-contract audit</option>
+      <option value="build">build — full dApp build</option>
+      <option value="consult">consult — quick / deep consult</option>
+      <option value="qa">qa — frontend QA</option>
+      <option value="research">research</option>
+      <option value="judge">judge — oracle / judge</option>
+      <option value="pfp">pfp — profile image</option>
+      <option value="other">other</option>
+    </select>
+    <label for="note">Short note (optional, stored as a comment tag)</label>
+    <input id="note" maxlength="64" placeholder="e.g. fast, thorough, shipped on time" />
+    <div class="row" style="margin-top:16px">
+      <button id="go" disabled>Sign &amp; submit feedback →</button>
+      <button id="read" class="sec">Read clawd's current reputation</button>
+    </div>
+  </div>
+
+  <div class="card"><b>Log</b><div id="log" class="muted">Connect the wallet you paid with, pick a rating, and sign. Gas is mainnet ETH (the feedback tx only — no payment here).</div></div>
+
+<script>
+const REP_REGISTRY = "0x8004BAa17C55a88189AE136b182e5fdA19dE9b63"; // ERC-8004 Reputation Registry (mainnet)
+const AGENT_ID = 21548n;
+// clawd's own wallets — feedback from these is self-dealing; warn (getSummary filters by client, so it's worthless anyway).
+const CLAWD_WALLETS = [
+  "0x11ce532845cE0eAcdA41f72FDc1C88c335981442", // payTo
+  "0xa822155c242B3a307086F1e2787E393d78A0B5AC", // leftclaw.eth
+  "0x8c00eae9b9A2f89BddaAE4f6884C716562C7cE93", // rightclaw.eth
+  "0x472C382550780cD30e1D27155b96Fa4b63d9247e", // clawdheart.eth
+  "0x09defC9E6ffc5e41F42e0D50512EEf9354523E0E", // clawdgut.eth
+].map(a=>a.toLowerCase());
+
+const REP_ABI = [
+  "function giveFeedback(uint256 agentId, int128 value, uint8 valueDecimals, string tag1, string tag2, string endpoint, string feedbackURI, bytes32 feedbackHash)",
+  "function getSummary(uint256 agentId, address[] clientAddresses, string tag1, string tag2) view returns (uint64 count, int128 summaryValue, uint8 summaryValueDecimals)"
+];
+const ZERO_HASH = "0x" + "0".repeat(64);
+const ENDPOINT = "https://leftclaw.services";
+
+const $ = id => document.getElementById(id);
+const log = (m, cls="") => { $("log").innerHTML += `\n<span class="${cls}">${m}</span>`; };
+let signer, account, stars = 5;
+
+function paintStars(){
+  [...$("stars").children].forEach(s => s.classList.toggle("on", Number(s.dataset.v) <= stars));
+}
+$("stars").onclick = e => { if(e.target.dataset.v){ stars = Number(e.target.dataset.v); paintStars(); } };
+paintStars();
+
+async function connect(){
+  if(!window.ethereum){ log("No wallet found. Install MetaMask.","bad"); return; }
+  const provider = new ethers.BrowserProvider(window.ethereum);
+  await provider.send("eth_requestAccounts", []);
+  const net = await provider.getNetwork();
+  if(net.chainId !== 1n){
+    log("Switching to Ethereum mainnet (where the 8004 Reputation Registry lives)…","warn");
+    try{ await window.ethereum.request({method:"wallet_switchEthereumChain",params:[{chainId:"0x1"}]}); }
+    catch(e){ log("Please switch to Ethereum mainnet and reconnect.","bad"); return; }
+  }
+  signer = await new ethers.BrowserProvider(window.ethereum).getSigner();
+  account = await signer.getAddress();
+  $("acct").textContent = account.slice(0,6)+"…"+account.slice(-4);
+  $("net").textContent = "Ethereum mainnet"; $("net").className="pill ok";
+  const isSelf = CLAWD_WALLETS.includes(account.toLowerCase());
+  $("self").textContent = isSelf ? "⚠ clawd-owned wallet" : "✓ external wallet";
+  $("self").className = "pill " + (isSelf ? "warn" : "ok");
+  $("go").disabled = false;
+  if(isSelf) log("Heads-up: this is one of clawd's own wallets. Self-feedback doesn't build real reputation (getSummary filters by client). Use a client wallet that actually paid.","warn");
+  else log("Connected. Pick a rating and sign.","ok");
+}
+
+async function readRep(){
+  const p = new ethers.BrowserProvider(window.ethereum);
+  const reg = new ethers.Contract(REP_REGISTRY, REP_ABI, p);
+  try{
+    const [count, val, dec] = await reg.getSummary(AGENT_ID, [], "", "");
+    const avg = Number(count) ? (Number(val)/10**Number(dec))/Number(count) : 0;
+    log(`\nclawd's reputation now: ${count} feedback(s)` + (Number(count) ? `, avg ★ ${avg.toFixed(2)}` : " — none yet (be the first)"), "ok");
+  }catch(e){ log("read failed: "+(e.shortMessage||e.message),"bad"); }
+}
+
+async function go(){
+  $("go").disabled = true;
+  const reg = new ethers.Contract(REP_REGISTRY, REP_ABI, signer);
+  const tag1 = $("svc").value;                       // service category
+  const note = $("note").value.trim().slice(0,64);   // freeform tag2
+  log(`\nSubmitting ★${stars} for "${tag1}"${note?` — "${note}"`:""}. Approve 1 transaction.`,"warn");
+  try{
+    // value = stars (1..5), valueDecimals = 0. tag1 = service, tag2 = note, endpoint = service site.
+    const tx = await reg.giveFeedback(AGENT_ID, BigInt(stars), 0, tag1, note, ENDPOINT, "", ZERO_HASH);
+    log(`tx ${tx.hash} — mining…`,"warn");
+    await tx.wait();
+    log(`✓ Feedback recorded on-chain. Thank you! · `,"ok");
+    $("log").innerHTML += `<a href="https://etherscan.io/tx/${tx.hash}" target="_blank">etherscan</a>`;
+    log("\n🦞 clawd's reputation just went up. Click \"Read clawd's current reputation\" to see it.","ok");
+  }catch(e){
+    $("go").disabled = false;
+    log("failed: "+(e.shortMessage||e.message),"bad");
+  }
+}
+
+$("connect").onclick = connect;
+$("go").onclick = go;
+$("read").onclick = readRep;
+</script>
+</body>
+</html>
