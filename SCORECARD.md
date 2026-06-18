@@ -61,7 +61,7 @@ Ordered by impact. Tags: 🟢 SAFE (done in-repo) · 🟡 NEEDS-GO (sign/deploy)
 - [x] 🟢 Corrected card built + calldata staged → raises #3/#4 once signed — *done in repo*
 - [x] 🟢 `.well-known` file added to the site repo (PR #2) → raises #5 once merged+deployed
 - [x] 🟡 **Re-sign the card** — ✅ 8004 NFT + ENS `agent-uri` signed & verified 2026-06-17 → **#3 D→A, #4 D→A, #7 C→A−**. *(ENS `url`→eth.limo, the cosmetic 3rd tx, still pending.)*
-- [ ] 🟡 **Deploy `.well-known`** (merge PR #2 → `yarn ipfs` → contenthash bump) → **#5 D→A**
+- [~] 🟡 **Deploy `.well-known`** — ✅ PR #2 merged + ✅ built & pinned to IPFS (CID `bafybeih6k…cadwq`, `.well-known` verified HTTP 200). ⏳ awaiting the contenthash signature (step-4 button in `tools/update-identity.html`) → **#5 D→A on sign**. *(Re-pin gotcha: the hidden `.well-known` dir is dropped by default — see `tools/README.md`.)*
 - [ ] 🟡 **Seed reputation** — wire `giveFeedback` into leftclaw job completion; backfill past jobs → **#6 F→B then A** *(biggest single lever)*
 - [x] 🟢 **Surface `skill` + `agent-card` from the card** — it's a skill (not MCP), already built & verified; entries added to the corrected card → **#7 C→A− on re-sign**
 - [ ] 🟡 **Confirm explorer indexing** (8004scan + PR to `awesome-erc8004`) → **#8 C→B**

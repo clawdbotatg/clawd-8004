@@ -60,6 +60,20 @@
     <p class="muted" style="margin:8px 0 0;font-size:12.5px">Steps 1 &amp; 2 already mined? Use <b>Just sign step 3</b> — it fires the ENS <code>url</code> fix on its own without waiting on the others.</p>
   </div>
 
+  <div class="card">
+    <b>Part 2 — publish the site (<code>.well-known</code>)</b>
+    <span class="muted"> · domain verification, SCORECARD #5</span>
+    <div class="step" style="border-top:0"><div class="num" id="n4">4</div><div>
+      <b>Set ENS <code>contenthash</code></b> → new IPFS build, so
+      <code>clawdbotatg.eth.limo/.well-known/agent-registration.json</code> serves the card.
+      <div class="muted" style="margin-top:4px">CID <code id="cidlabel">bafybeih6k…cadwq</code></div>
+      <div id="s4" class="muted">pending</div></div></div>
+    <div class="row" style="margin-top:12px">
+      <button id="go4" disabled>Sign: set contenthash →</button>
+      <button id="curch" class="sec">Read current contenthash</button>
+    </div>
+  </div>
+
   <div class="card"><b>Log</b><div id="log" class="muted">—</div></div>
   <pre id="cardview" style="display:none"></pre>
 
@@ -70,11 +84,17 @@ const NODE     = ethers.namehash("clawdbotatg.eth"); // public ENS namehash, com
 const AGENT_ID = 21548n;
 const OWNER    = "0x11ce532845cE0eAcdA41f72FDc1C88c335981442";
 const LIMO     = "https://clawdbotatg.eth.limo";
+// Part 2 — publish the site to IPFS so eth.limo/.well-known/ serves the card.
+// CID from `yarn ipfs` (clawd-landing) on 2026-06-17, re-pinned WITH the hidden
+// .well-known/ dir (verified: /.well-known/agent-registration.json -> HTTP 200).
+// contenthash = e301 + CIDv1 bytes (round-trip verified).
+const NEW_CID         = "bafybeih6k44lrgxqvs5sk63rrv4b7zm4exo2z6gdzuds5pas6rrrpcadwq";
+const NEW_CONTENTHASH = "0xe30101701220fe5738b89af0acbb257b718d781fe59c25ddacf8c3cd072ebc12f463178803b4";
 // The corrected card, minted inline. Byte-identical to registration/agent-registration.json.
 const DATA_URI = "data:application/json;base64,eyJ0eXBlIjoiaHR0cHM6Ly9laXBzLmV0aGVyZXVtLm9yZy9FSVBTL2VpcC04MDA0I3JlZ2lzdHJhdGlvbi12MSIsIm5hbWUiOiJDbGF3ZCIsImRlc2NyaXB0aW9uIjoiQXV0b25vbW91cyBBSSBFdGhlcmV1bSBidWlsZGVyIGZvciBoaXJlLiBEZXNpZ25zLCBhdWRpdHMsIGFuZCBzaGlwcyBwcm9kdWN0aW9uIGRBcHBzIHdpdGggU2NhZmZvbGQtRVRIIDIgb24gQmFzZSBhbmQgbWFpbm5ldC4gUGF5IHBlciBjYWxsIGluIFVTREMgb24gQmFzZSB2aWEgeDQwMiBcdTIwMTQgbm8gYWNjb3VudCwgbm8gaW52b2ljZS4gQWdlbnRzOiBncmFiIHRoZSBza2lsbCBhdCBsZWZ0Y2xhdy5zZXJ2aWNlcy9za2lsbC5tZCwgcmVhZCBsaXZlIHByaWNlcyBmcm9tIHRoZSBjYXRhbG9nIG9yIHRoZSA0MDIgcmVzcG9uc2UsIHRoZW4gcGF5LiBTZXJ2aWNlcyBmcm9tICQwLjAxIChQRlApIHRocm91Z2ggY29uc3VsdHMsIGZyb250ZW5kIFFBLCBjb250cmFjdCBhdWRpdHMsIHJlc2VhcmNoLCBmdWxsIGJ1aWxkcywgYW5kIG9yYWNsZS9qdWRnZS4gUnVuIGJ5IEF1c3RpbiBHcmlmZml0aCAoU2NhZmZvbGQtRVRIIC8gQnVpZGxHdWlkbCkuIiwiaW1hZ2UiOiJpcGZzOi8vYmFma3JlaWh3YXo1dTd2bWNuNWl5bjJxem43ZnhrdGl5Y3NzdWFzeXJ6amluZmltYzJpN3I1N29vczQiLCJhY3RpdmUiOnRydWUsIng0MDJTdXBwb3J0Ijp0cnVlLCJzZXJ2aWNlcyI6W3sibmFtZSI6InNraWxsIiwiZW5kcG9pbnQiOiJodHRwczovL2xlZnRjbGF3LnNlcnZpY2VzL3NraWxsLm1kIn0seyJuYW1lIjoiYWdlbnQtY2FyZCIsImVuZHBvaW50IjoiaHR0cHM6Ly9sZWZ0Y2xhdy5zZXJ2aWNlcy8ud2VsbC1rbm93bi9hZ2VudC5qc29uIn0seyJuYW1lIjoiY2F0YWxvZyIsImVuZHBvaW50IjoiaHR0cHM6Ly9sZWZ0Y2xhdy5zZXJ2aWNlcy9hcGkvc2VydmljZXMifSx7Im5hbWUiOiJ4NDAyIiwiZW5kcG9pbnQiOiJodHRwczovL2xlZnRjbGF3LnNlcnZpY2VzL2FwaS9jb25zdWx0L3F1aWNrIiwidmVyc2lvbiI6InYxIn0seyJuYW1lIjoieDQwMiIsImVuZHBvaW50IjoiaHR0cHM6Ly9sZWZ0Y2xhdy5zZXJ2aWNlcy9hcGkvY29uc3VsdC9kZWVwIiwidmVyc2lvbiI6InYxIn0seyJuYW1lIjoieDQwMiIsImVuZHBvaW50IjoiaHR0cHM6Ly9sZWZ0Y2xhdy5zZXJ2aWNlcy9hcGkvcWEiLCJ2ZXJzaW9uIjoidjEifSx7Im5hbWUiOiJ4NDAyIiwiZW5kcG9pbnQiOiJodHRwczovL2xlZnRjbGF3LnNlcnZpY2VzL2FwaS9hdWRpdCIsInZlcnNpb24iOiJ2MSJ9LHsibmFtZSI6Ing0MDIiLCJlbmRwb2ludCI6Imh0dHBzOi8vbGVmdGNsYXcuc2VydmljZXMvYXBpL3Jlc2VhcmNoIiwidmVyc2lvbiI6InYxIn0seyJuYW1lIjoieDQwMiIsImVuZHBvaW50IjoiaHR0cHM6Ly9sZWZ0Y2xhdy5zZXJ2aWNlcy9hcGkvYnVpbGQiLCJ2ZXJzaW9uIjoidjEifSx7Im5hbWUiOiJ4NDAyIiwiZW5kcG9pbnQiOiJodHRwczovL2xlZnRjbGF3LnNlcnZpY2VzL2FwaS9qdWRnZSIsInZlcnNpb24iOiJ2MSJ9LHsibmFtZSI6Ing0MDIiLCJlbmRwb2ludCI6Imh0dHBzOi8vbGVmdGNsYXcuc2VydmljZXMvYXBpL3BmcCIsInZlcnNpb24iOiJ2MSJ9LHsibmFtZSI6IndlYiIsImVuZHBvaW50IjoiaHR0cHM6Ly9jbGF3ZGJvdGF0Zy5ldGgubGltbyJ9LHsibmFtZSI6IkVOUyIsImVuZHBvaW50IjoiY2xhd2Rib3RhdGcuZXRoIn1dLCJyZWdpc3RyYXRpb25zIjpbeyJhZ2VudElkIjoyMTU0OCwiYWdlbnRSZWdpc3RyeSI6ImVpcDE1NToxOjB4ODAwNEExNjlGQjRhMzMyNTEzNkVCMjlmQTBjZUI2RDJlNTM5YTQzMiJ9XSwic3VwcG9ydGVkVHJ1c3QiOlsicmVwdXRhdGlvbiJdfQ==";
 
 const REG_ABI = ["function setAgentURI(uint256,string)","function ownerOf(uint256) view returns (address)","function tokenURI(uint256) view returns (string)"];
-const RES_ABI = ["function setText(bytes32,string,string)","function text(bytes32,string) view returns (string)"];
+const RES_ABI = ["function setText(bytes32,string,string)","function text(bytes32,string) view returns (string)","function setContenthash(bytes32,bytes)","function contenthash(bytes32) view returns (bytes)"];
 
 const $ = id => document.getElementById(id);
 const log = (m, cls="") => { $("log").innerHTML += `\n<span class="${cls}">${m}</span>`; };
@@ -101,6 +121,7 @@ async function connect(){
   $("owner").className = "pill " + (isOwner?"ok":"bad");
   $("go").disabled = !isOwner;
   $("go3").disabled = !isOwner;
+  $("go4").disabled = !isOwner;
   log(isOwner ? "Connected as the owner. Ready." : "This wallet does not own #21548 — connect 0x11ce…1442.", isOwner?"ok":"bad");
 }
 
@@ -153,9 +174,30 @@ async function go3(){
   } else { $("go3").disabled=false; $("go").disabled=false; }
 }
 
+async function readContenthash(){
+  const p = new ethers.BrowserProvider(window.ethereum);
+  const res = new ethers.Contract(RESOLVER, RES_ABI, p);
+  try{
+    const ch = await res.contenthash(NODE);
+    const match = ch.toLowerCase() === NEW_CONTENTHASH.toLowerCase();
+    log(`\ncontenthash now: ${ch}\n→ ${match ? "✅ already the new build" : "❌ old build (this tx replaces it)"}`, match?"ok":"warn");
+  }catch(e){ log("read failed: "+(e.shortMessage||e.message),"bad"); }
+}
+
+async function go4(){
+  $("go4").disabled = true;
+  const res = new ethers.Contract(RESOLVER, RES_ABI, signer);
+  log(`\nSetting contenthash → ${NEW_CID}. Approve 1 transaction.`,"warn");
+  if(await sendStep(4, res, "setContenthash", [NODE, NEW_CONTENTHASH])){
+    log("\n🦞 Site published. Within a minute, clawdbotatg.eth.limo/.well-known/agent-registration.json serves the card. SCORECARD #5 D→A.","ok");
+  } else { $("go4").disabled=false; }
+}
+
 $("connect").onclick = connect;
 $("go").onclick = go;
 $("go3").onclick = go3;
+$("go4").onclick = go4;
+$("curch").onclick = readContenthash;
 $("current").onclick = readCurrent;
 $("preview").onclick = () => {
   const json = atob(DATA_URI.split(",")[1]);

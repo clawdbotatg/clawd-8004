@@ -69,13 +69,29 @@ python3 -m http.server 8099
 
 ---
 
-## Part 2 — `.well-known` + contenthash (not in this tool yet)
+## Part 2 — `.well-known` + contenthash (now a button in this tool)
 
-Domain verification needs an IPFS deploy, which isn't a pure wallet click:
+Domain verification needs an IPFS deploy. Done as of 2026-06-17:
 
-1. Merge [clawd-landing#2](https://github.com/clawdbotatg/clawd-landing/pull/2).
-2. `cd ~/clawd/clawd-landing && NEXT_PUBLIC_IPFS_BUILD=true yarn ipfs` → new CID.
-3. Set the `clawdbotatg.eth` contenthash to that CID (MetaMask / ENS app).
+1. ✅ Merged [clawd-landing#2](https://github.com/clawdbotatg/clawd-landing/pull/2) (the `.well-known` file).
+2. ✅ Built + pinned: `cd ~/clawd/clawd-landing && NEXT_PUBLIC_IPFS_BUILD=true yarn ipfs`
+   → CID `bafybeih6k44lrgxqvs5sk63rrv4b7zm4exo2z6gdzuds5pas6rrrpcadwq`
+   (verified: `/.well-known/agent-registration.json` → HTTP 200, 13 services).
+3. ⏳ **Sign: set contenthash →** button in `update-identity.html` (step 4) sets
+   the `clawdbotatg.eth` contenthash to that CID. One signature. → SCORECARD #5 D→A.
 
-Once we have the CID, a "Set contenthash" button can be added here so step 3 is
-also one click. See [`../site/README.md`](../site/README.md).
+### ⚠️ Gotcha that bites every redeploy: the hidden `.well-known` dir
+
+`yarn ipfs` uploads via `bgipfs` → `ipfs-uploader` → kubo `globSource(dir, "**/*")`,
+which defaults to **`dot:false`** and **silently drops the `.well-known` dot-dir**.
+The first pin built fine and served the site root, but `/.well-known/…` 404'd.
+
+Fix used (one-off, ephemeral — node_modules is gitignored): patched
+`packages/nextjs/node_modules/ipfs-uploader/dist/NodeUploader.js` to pass
+`globSource(input.dirPath, input.pattern ?? "**/*", { hidden: true })`, then
+re-ran `yarn bgipfs upload out`.
+
+**This regresses on the next `yarn ipfs` / `yarn install`.** The durable fix
+belongs in clawd-landing (route through its Claude Code session): e.g. override
+the `ipfs` script to pin with `{ hidden: true }`, or post-process the CID. Until
+then, anyone redeploying must re-apply the patch or the `.well-known` vanishes.
