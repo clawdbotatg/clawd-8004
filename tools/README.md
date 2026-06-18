@@ -92,6 +92,8 @@ Fix used (one-off, ephemeral — node_modules is gitignored): patched
 re-ran `yarn bgipfs upload out`.
 
 **This regresses on the next `yarn ipfs` / `yarn install`.** The durable fix
-belongs in clawd-landing (route through its Claude Code session): e.g. override
-the `ipfs` script to pin with `{ hidden: true }`, or post-process the CID. Until
-then, anyone redeploying must re-apply the patch or the `.well-known` vanishes.
+belongs in clawd-landing (Yarn 3 Berry → `yarn patch ipfs-uploader` + a root
+`resolutions` entry, which survives installs). Full self-contained handoff spec
+for the clawd-landing CC session:
+[`../docs/TASK-clawd-landing-ipfs-wellknown.md`](../docs/TASK-clawd-landing-ipfs-wellknown.md).
+Until that lands, anyone redeploying must re-apply the patch or `.well-known` vanishes.
